@@ -56,8 +56,7 @@
             margin-bottom: 10px;
         }
 
-        .download-button,
-        #downloadAllButton {
+        .download-button {
             padding: 5px 10px;
             background-color: #4CAF50;
             color: white;
@@ -66,8 +65,7 @@
             cursor: pointer;
         }
 
-        .download-button:hover,
-        #downloadAllButton:hover {
+        .download-button:hover {
             background-color: #45a049;
         }
 
@@ -92,25 +90,81 @@
             background-color: #e53935;
         }
 
-        .canvas-wrapper>canvas {
-            text-align: center;
-            height: 75px;
-            width: 150px;
-            object-fit: contain;
-            border: 1px solid rgb(37 37 37 / 25%);
-            border-radius: 10px;
-        }
+
+
+        body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    .canvas-container {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .canvas-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 10px;
+        background-color: #f9f9f9;
+    }
+
+    canvas {
+        border: 1px solid rgb(37 37 37 / 25%);
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .download-button {
+        padding: 5px 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .download-button:hover {
+        background-color: #45a049;
+    }
+
+    .canvas-wrapper>canvas {
+        text-align: center;
+        height: 75px;
+        width: 150px;
+        object-fit: contain;
+        border: 1px solid rgb(37 37 37 / 25%);
+        border-radius: 10px;
+    }
+
+    #canvasContainer {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 15px;
+        margin-top: 25px;
+    }
     </style>
 </head>
 
 <body>
     <h1>Загрузка и обрезка изображений</h1>
 
+
     <div class="drop-zone" id="dropZone">Перетащите файлы сюда или нажмите для выбора</div>
     <input type="file" id="upload" accept="image/*" multiple style="display: none;">
     <button id="clearButton">Очистить</button>
-    <button id="downloadAllButton" style="display: none;">Скачать все изображения</button>
     <div id="canvasContainer" class="canvas-container"></div>
+
 
     <div class="copywright"
         style="max-width: 75%; margin: 0 auto; text-align: center; margin-top: 15px; margin-bottom: 15px; font-size: 12px; font-weight: 400;">
@@ -131,13 +185,11 @@
 
         Для получения разрешений на использование или по вопросам, связанным с правами собственности, пожалуйста,
         свяжитесь с нами по адресу: fokin.alek@mail.ru</div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
         const uploadInput = document.getElementById('upload');
         const dropZone = document.getElementById('dropZone');
         const canvasContainer = document.getElementById('canvasContainer');
         const clearButton = document.getElementById('clearButton');
-        const downloadAllButton = document.getElementById('downloadAllButton');
 
         dropZone.addEventListener('click', () => uploadInput.click());
 
@@ -157,19 +209,13 @@
 
         clearButton.addEventListener('click', () => {
             canvasContainer.innerHTML = '';
-            downloadAllButton.style.display = 'none';
         });
-
-        downloadAllButton.addEventListener('click', downloadAllImages);
 
         function handleImages(event) {
             handleFiles(event.target.files);
         }
 
         function handleFiles(files) {
-            if (files.length > 1) {
-                downloadAllButton.style.display = 'block';
-            }
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function (event) {
@@ -224,7 +270,7 @@
                             downloadButton.addEventListener('click', function () {
                                 const link = document.createElement('a');
                                 link.href = canvas.toDataURL('image/jpeg', 0.92); // Указываем формат JPEG и качество
-                                link.download = file.name.replace(/\.[^/.]+$/, "") + "_trimmed.jpg";
+                                link.download = `trimmed_image_${index + 1}.jpg`;
                                 link.click();
                             });
 
@@ -244,27 +290,6 @@
             const b = data[idx + 2];
             const a = data[idx + 3];
             return (r > 240 && g > 240 && b > 240 && a === 255) || a === 0;
-        }
-
-        function downloadAllImages() {
-            const zip = new JSZip();
-            const promises = [];
-            Array.from(canvasContainer.children).forEach((canvasWrapper, index) => {
-                const canvas = canvasWrapper.querySelector('canvas');
-                if (canvas) {
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-                    const imgData = dataUrl.split(',')[1];
-                    const fileName = `trimmed_image_${index + 1}.jpg`;
-                    zip.file(fileName, imgData, { base64: true });
-                }
-            });
-
-            zip.generateAsync({ type: 'blob' }).then(function (content) {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = 'trimmed_images.zip';
-                link.click();
-            });
         }
     </script>
 </body>
