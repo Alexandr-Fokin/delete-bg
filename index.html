@@ -92,10 +92,6 @@
             background-color: #e53935;
         }
 
-        #downloadAllButton {
-            margin-top: 15px;
-        }
-
         .canvas-wrapper>canvas {
             text-align: center;
             height: 75px;
@@ -108,12 +104,12 @@
 </head>
 
 <body>
-    <h1>Загрузка и обрезка изображений</h1>
+    <!-- <h1>Загрузка и обрезка изображений</h1> -->
 
     <div class="drop-zone" id="dropZone">Перетащите файлы сюда или нажмите для выбора</div>
     <input type="file" id="upload" accept="image/*" multiple style="display: none;">
     <button id="clearButton">Очистить</button>
-    <button id="downloadAllButton" style="display: none;">Скачать все изображения</button>
+    <button id="downloadAllButton" style="display: none; margin-top: 15px;">Скачать все изображения</button>
     <div id="canvasContainer" class="canvas-container"></div>
 
     <div class="copywright"
@@ -135,13 +131,14 @@
 
         Для получения разрешений на использование или по вопросам, связанным с правами собственности, пожалуйста,
         свяжитесь с нами по адресу: fokin.alek@mail.ru</div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
         const uploadInput = document.getElementById('upload');
         const dropZone = document.getElementById('dropZone');
         const canvasContainer = document.getElementById('canvasContainer');
         const clearButton = document.getElementById('clearButton');
         const downloadAllButton = document.getElementById('downloadAllButton');
+        let firstFileName = '';
 
         dropZone.addEventListener('click', () => uploadInput.click());
 
@@ -171,8 +168,11 @@
         }
 
         function handleFiles(files) {
-            if (files.length > 1) {
-                downloadAllButton.style.display = 'block';
+            if (files.length > 0) {
+                firstFileName = files[0].name.replace(/\.[^/.]+$/, "");
+                if (files.length > 1) {
+                    downloadAllButton.style.display = 'block';
+                }
             }
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
@@ -251,14 +251,22 @@
         }
 
         function downloadAllImages() {
+            const zip = new JSZip();
             Array.from(canvasContainer.children).forEach((canvasWrapper, index) => {
                 const canvas = canvasWrapper.querySelector('canvas');
                 if (canvas) {
-                    const link = document.createElement('a');
-                    link.href = canvas.toDataURL('image/jpeg', 0.92); // Указываем формат JPEG и качество
-                    link.download = uploadInput.files[index].name.replace(/\.[^/.]+$/, "") + "_trimmed.jpg";
-                    link.click();
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+                    const imgData = dataUrl.split(',')[1];
+                    const fileName = `trimmed_image_${index + 1}.jpg`;
+                    zip.file(fileName, imgData, { base64: true });
                 }
+            });
+
+            zip.generateAsync({ type: 'blob' }).then(function (content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `${firstFileName}_trimmed_images.zip`;
+                link.click();
             });
         }
     </script>
