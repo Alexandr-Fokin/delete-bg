@@ -40,6 +40,7 @@
         }
 
         .canvas-wrapper {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -50,10 +51,31 @@
             background-color: #f9f9f9;
         }
 
-        canvas {
+        .canvas-wrapper>canvas {
+            text-align: center;
+            height: 75px;
+            width: 150px;
+            object-fit: contain;
             border: 1px solid rgb(37 37 37 / 25%);
             border-radius: 10px;
             margin-bottom: 10px;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            font-size: 16px;
+            font-weight: bold;
         }
 
         .download-button,
@@ -92,13 +114,14 @@
             background-color: #e53935;
         }
 
-        .canvas-wrapper>canvas {
+        .copywright {
+            max-width: 75%;
+            margin: 0 auto;
             text-align: center;
-            height: 75px;
-            width: 150px;
-            object-fit: contain;
-            border: 1px solid rgb(37 37 37 / 25%);
-            border-radius: 10px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            font-weight: 400;
         }
     </style>
 </head>
@@ -112,25 +135,17 @@
     <button id="downloadAllButton" style="display: none; margin-top: 15px;">Скачать все изображения</button>
     <div id="canvasContainer" class="canvas-container"></div>
 
-    <div class="copywright"
-        style="max-width: 75%; margin: 0 auto; text-align: center; margin-top: 15px; margin-bottom: 15px; font-size: 12px; font-weight: 400;">
-        Все права на эту разработку принадлежат Фокину Александру Сергеевичу. Данное программное обеспечение (или
-        веб-сайт, приложение и т.д.) является объектом авторского права и других прав интеллектуальной собственности.
-
+    <div class="copywright">
+        Все права на эту разработку принадлежат Фокину Александру Сергеевичу. Данное программное обеспечение (или веб-сайт, приложение и т.д.) является объектом авторского права и других прав интеллектуальной собственности.
         Запрещается:
-
-        Использование данного программного обеспечения (или его частей) в коммерческих целях без предварительного
-        письменного согласия правообладателя.
-        Копирование, распространение, изменение или создание производных продуктов на основе данного программного
-        обеспечения без разрешения.
+        Использование данного программного обеспечения (или его частей) в коммерческих целях без предварительного письменного согласия правообладателя.
+        Копирование, распространение, изменение или создание производных продуктов на основе данного программного обеспечения без разрешения.
         Любое другое использование, нарушающее авторские права и права на интеллектуальную собственность.
-
-        Все товарные знаки, логотипы и фирменные наименования являются собственностью их владельцев. Использование
-        данных знаков без соответствующего разрешения также запрещено.
+        Все товарные знаки, логотипы и фирменные наименования являются собственностью их владельцев. Использование данных знаков без соответствующего разрешения также запрещено.
         Контактная информация
+        Для получения разрешений на использование или по вопросам, связанным с правами собственности, пожалуйста, свяжитесь с нами по адресу: fokin.alek@mail.ru
+    </div>
 
-        Для получения разрешений на использование или по вопросам, связанным с правами собственности, пожалуйста,
-        свяжитесь с нами по адресу: fokin.alek@mail.ru</div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
         const uploadInput = document.getElementById('upload');
@@ -139,6 +154,7 @@
         const clearButton = document.getElementById('clearButton');
         const downloadAllButton = document.getElementById('downloadAllButton');
         let firstFileName = '';
+        let imageIndex = 0; // Инициализация индекса изображений
 
         dropZone.addEventListener('click', () => uploadInput.click());
 
@@ -159,6 +175,7 @@
         clearButton.addEventListener('click', () => {
             canvasContainer.innerHTML = '';
             downloadAllButton.style.display = 'none';
+            imageIndex = 0; // Сброс индекса изображений при очистке
         });
 
         downloadAllButton.addEventListener('click', downloadAllImages);
@@ -168,12 +185,10 @@
         }
 
         function handleFiles(files) {
-            if (files.length > 0) {
+            if (files.length > 0 && !firstFileName) {
                 firstFileName = files[0].name.replace(/\.[^/.]+$/, "");
-                if (files.length > 1) {
-                    downloadAllButton.style.display = 'block';
-                }
             }
+
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function (event) {
@@ -181,6 +196,15 @@
                     img.onload = function () {
                         const canvasWrapper = document.createElement('div');
                         canvasWrapper.className = 'canvas-wrapper';
+
+                        const closeButton = document.createElement('button');
+                        closeButton.className = 'close-button';
+                        closeButton.innerHTML = '&times;';
+                        closeButton.addEventListener('click', function () {
+                            canvasWrapper.remove();
+                            toggleDownloadAllButton();
+                        });
+                        canvasWrapper.appendChild(closeButton);
 
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
@@ -224,7 +248,7 @@
 
                             const downloadButton = document.createElement('button');
                             downloadButton.className = 'download-button';
-                            downloadButton.innerText = `Скачать обрезанное изображение ${index + 1}`;
+                            downloadButton.innerText = `Скачать обрезанное изображение ${imageIndex + 1}`; // Использование imageIndex
                             downloadButton.addEventListener('click', function () {
                                 const link = document.createElement('a');
                                 link.href = canvas.toDataURL('image/jpeg', 0.92); // Указываем формат JPEG и качество
@@ -234,6 +258,8 @@
 
                             canvasWrapper.appendChild(downloadButton);
                             canvasContainer.appendChild(canvasWrapper);
+                            imageIndex++; // Увеличение индекса изображений после добавления каждого изображения
+                            toggleDownloadAllButton();
                         }
                     }
                     img.src = event.target.result;
@@ -250,6 +276,11 @@
             return (r > 240 && g > 240 && b > 240 && a === 255) || a === 0;
         }
 
+        function toggleDownloadAllButton() {
+            const canvasCount = canvasContainer.querySelectorAll('.canvas-wrapper').length;
+            downloadAllButton.style.display = canvasCount > 1 ? 'block' : 'none';
+        }
+
         function downloadAllImages() {
             const zip = new JSZip();
             Array.from(canvasContainer.children).forEach((canvasWrapper, index) => {
@@ -257,7 +288,8 @@
                 if (canvas) {
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
                     const imgData = dataUrl.split(',')[1];
-                    const fileName = `trimmed_image_${index + 1}.jpg`;
+                    const originalFileName = canvasWrapper.querySelector('button.download-button').innerText.replace('Скачать обрезанное изображение ', '');
+                    const fileName = originalFileName + "_trimmed.jpg";
                     zip.file(fileName, imgData, { base64: true });
                 }
             });
